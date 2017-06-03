@@ -1,0 +1,22 @@
+{
+  "name": "alexa-devjobs",
+  "version": "1.0.0",
+  "description": "Search StackOverflow jobs listings",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhefty/alexa-devjobs.git"
+  },
+  "author": "Bill Hefty",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bhefty/alexa-devjobs/issues"
+  },
+  "homepage": "https://github.com/bhefty/alexa-devjobs#readme",
+  "dependencies": {
+    "alexa-sdk": "^1.0.9"
+  }
+}
