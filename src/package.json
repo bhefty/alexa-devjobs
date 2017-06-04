@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/bhefty/alexa-devjobs#readme",
   "dependencies": {
-    "alexa-sdk": "^1.0.9"
+    "alexa-sdk": "^1.0.9",
+    "isomorphic-fetch": "^2.2.1",
+    "promise": "^7.1.1"
   }
 }
