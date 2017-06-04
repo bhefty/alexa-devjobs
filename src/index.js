@@ -1,3 +1,5 @@
+const Alexa = require('alexa-sdk');
+const Promise = require('promise');
 const fetch = require('isomorphic-fetch');
 
 // alexa-cookbook sample code
@@ -10,13 +12,27 @@ const fetch = require('isomorphic-fetch');
 // 1. Text strings =====================================================================================================
 //    Modify these strings and messages to change the behavior of your Lambda function
 
-var welcomeOutput = `Let's search for some remote jobs! What kind of job would you like to search for?`;
-var welcomeReprompt = `Let me know what kind of job to search for.`
+const welcomeOutput = `Let's search for some remote jobs! What kind of job would you like to search for?`;
+const welcomeReprompt = `Let me know what kind of job to search for.`;
+const goodbyeMessage = `Ok, be sure to check back later for new job offerings.`;
+const helpMessage = `You can ask to search for a job type, continue to the next job, or stop to end.`
 
+let jobsArray = [
+    {
+        title: "First job title First job title First job title First job title First job title First job title First job title ",
+        description: "First job description."
+    },
+    {
+        title: "Second job title Second job title Second job title Second job title Second job title Second job title Second job title ",
+        description: "Second job description."
+    },
+    {
+        title: "THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title ",
+        description: "third job description."
+    }
+]
+let indexCounter = 0
 // 2. Skill Code =======================================================================================================
-
-
-var Alexa = require('alexa-sdk');
 
 exports.handler = function(event, context, callback) {
     // allow using callback as finish/error-handlers
@@ -39,7 +55,7 @@ var handlers = {
     'RemoteJobIntent': function () {
         // delegate to Alexa to collect the required slot values
         var filledSlots = delegateSlotCollection.call(this);
-
+        console.log('request inten', this.event.request)
         var jobType = this.event.request.intent.slots.jobType.value;
         let jobCategory = parseJobType(jobType);
         fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fweworkremotely.com%2Fcategories%2F${jobCategory}%2Fjobs.rss`)
@@ -49,12 +65,36 @@ var handlers = {
             })
             .then((jobs) => {
                 let jobResult = jobs.items[0].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
-                this.emit(':tell', `The latest remote job for ${jobType} is: ${jobResult}`);
-            })
+                this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... There are more jobs, say 'continue' to hear more, or 'stop' to end`, `Say 'continue' to hear more jobs, or 'stop' to end.`);
+                // this.emit(':tell', jobsArray[indexCounter].title)
+        })
             .catch((err) => {
                 console.log(err);
                 this.emit(':tell', 'Error occurred');
             })
+    },
+
+    'AMAZON.NextIntent': function() {
+        if (indexCounter !== 2) {
+            indexCounter++
+            this.emit(':ask', `${jobsArray[indexCounter].description}... There are more jobs, say 'continue' to hear more, or 'stop' to end.`, `Say 'continue' to hear more jobs, or 'stop' to end.`)
+        } else {
+            this.emit(':tell', "That is all the jobs listed")
+        }
+        
+        // this.emit(':tell', 'This is your next intent.');
+    },
+
+    'AMAZON.HelpIntent': function () {
+        this.emit(':ask', helpMessage, helpMessage);
+    },
+
+    'AMAZON.StopIntent': function () {
+        this.emit(':tell', goodbyeMessage);
+    },
+
+    'AMAZON.CancelIntent': function () {
+        this.emit(':tell', goodbyeMessage);
     },
 
     'Unhandled': function () {
