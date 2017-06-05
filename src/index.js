@@ -1,22 +1,40 @@
+const Alexa = require('alexa-sdk');
+const Promise = require('promise');
 const fetch = require('isomorphic-fetch');
 
-// alexa-cookbook sample code
 
-// There are three sections, Text Strings, Skill Code, and Helper Function(s).
-// You can copy and paste the entire file contents as the code for a new Lambda function,
-//  or copy & paste section #3, the helper function, to the bottom of your existing Lambda code.
+// Text strings =====================================================================================================
+
+const welcomeMessage = `Let's search for some remote jobs! What kind of job would you like to search for?`;
+const repeatWelcomeMessage = `Let me know what kind of job to search for. You can say something like 'programming', 'design', 'business' or something else.`;
+const goodbyeMessage = `Be sure to check back later for new job offerings.`;
+const detailsMessage = `If you want more details, say 'details' or 'description'.`;
+const helpMessage = `You can ask to search for a job type, continue to the next job, get details, start over to search for a new job, or stop to end.`;
+const moreMessage = `There are more jobs, say 'continue' to hear more, or 'stop' to end.`;
+const repeatMoreMessage = `Say 'continue' to hear more jobs, or 'stop' to end.`;
+const noMoreMessage = `That was all the jobs I found at this time. You can say 'start over' to search for a new job, or 'stop' to end.`;
 
 
-// 1. Text strings =====================================================================================================
-//    Modify these strings and messages to change the behavior of your Lambda function
+let sampleArray = [
+    {
+        title: "First job title First job title First job title First job title First job title First job title First job title ",
+        description: "First job description."
+    },
+    {
+        title: "Second job title Second job title Second job title Second job title Second job title Second job title Second job title ",
+        description: "Second job description."
+    },
+    {
+        title: "THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title ",
+        description: "third job description."
+    }
+]
 
-var welcomeOutput = `Let's search for some remote jobs! What kind of job would you like to search for?`;
-var welcomeReprompt = `Let me know what kind of job to search for.`
+let jobsArray =[]
 
+
+let indexCounter = 0
 // 2. Skill Code =======================================================================================================
-
-
-var Alexa = require('alexa-sdk');
 
 exports.handler = function(event, context, callback) {
     // allow using callback as finish/error-handlers
@@ -33,10 +51,12 @@ exports.handler = function(event, context, callback) {
 
 var handlers = {
     'LaunchRequest': function () {
-        this.emit(':ask', welcomeOutput, welcomeReprompt);
+        indexCounter = 0
+        this.emit(':ask', welcomeMessage, repeatWelcomeMessage);
     },
 
     'RemoteJobIntent': function () {
+        indexCounter = 0
         // delegate to Alexa to collect the required slot values
         var filledSlots = delegateSlotCollection.call(this);
 
@@ -44,17 +64,69 @@ var handlers = {
         let jobCategory = parseJobType(jobType);
         fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fweworkremotely.com%2Fcategories%2F${jobCategory}%2Fjobs.rss`)
             .then((res) => {
-                console.log(res);
                 return res.json()
             })
             .then((jobs) => {
-                let jobResult = jobs.items[0].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
-                this.emit(':tell', `The latest remote job for ${jobType} is: ${jobResult}`);
-            })
+                jobsArray = jobs.items;
+                let jobResult = jobsArray[indexCounter].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
+                if (indexCounter + 1 !== jobsArray.length) {
+                    this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... ${detailsMessage}... ${moreMessage}`, repeatMoreMessage);
+                    indexCounter++;
+                } else {
+                    this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... ${detailsMessage}... ${noMoreMessage}`, noMoreMessage);
+                }
+        })
             .catch((err) => {
                 console.log(err);
-                this.emit(':tell', 'Error occurred');
+                this.emit(':tell', 'Sorry, an error occurred when getting job results. Try again later.');
             })
+    },
+
+    'JobDescriptionIntent': function() {
+        if (indexCounter !== jobsArray.length) {
+            // Rollback counter to ensure correct job is described
+            indexCounter--;
+            
+            this.emit(':ask', `Here is a description of the job...${jobsArray[indexCounter].description.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')}... ${moreMessage}`, repeatMoreMessage)
+            
+            indexCounter++;
+        } else {
+            // Rollback counter to ensure correct job is described
+            indexCounter--;
+            this.emit(':ask', `Here is a description of the job...${jobsArray[indexCounter].description.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')}... ${noMoreMessage}`, noMoreMessage)
+        }
+        
+    },
+
+    'AMAZON.NextIntent': function() {
+        if (indexCounter + 1 !== jobsArray.length) {
+            let currentJobTitle = jobsArray[indexCounter].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
+            this.emit(':ask', `${currentJobTitle}...${detailsMessage}... ${moreMessage}`, repeatMoreMessage)
+            indexCounter++;
+        } else if (indexCounter + 1 === jobsArray.length) {
+            let currentJobTitle = jobsArray[indexCounter].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
+            this.emit(':ask', `${currentJobTitle}... ${detailsMessage}... ${noMoreMessage}`, noMoreMessage)
+            indexCounter++;
+        } else {
+            this.emit(':ask', noMoreMessage, noMoreMessage)
+        }
+    },
+
+    'AMAZON.StartOverIntent': function() {
+        indexCounter = 0;
+        this.emit(':ask', welcomeMessage, repeatWelcomeMessage);
+    },
+
+    'AMAZON.HelpIntent': function () {
+        this.emit(':ask', helpMessage, helpMessage);
+    },
+
+    'AMAZON.StopIntent': function () {
+        this.emit(':tell', goodbyeMessage);
+    },
+
+    'AMAZON.CancelIntent': function () {
+        this.emit(':tell', goodbyeMessage);
     },
 
     'Unhandled': function () {
