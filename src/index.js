@@ -83,7 +83,7 @@ var handlers = {
     },
 
     'JobDescriptionIntent': function() {
-        if (indexCounter + 1 !== jobsArray.length) {
+        if (indexCounter !== jobsArray.length) {
             // Rollback counter to ensure correct job is described
             indexCounter--;
             
@@ -91,6 +91,8 @@ var handlers = {
             
             indexCounter++;
         } else {
+            // Rollback counter to ensure correct job is described
+            indexCounter--;
             this.emit(':ask', `Here is a description of the job...${jobsArray[indexCounter].description.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')}... ${noMoreMessage}`, noMoreMessage)
         }
         
