@@ -69,8 +69,9 @@ var handlers = {
             .then((jobs) => {
                 jobsArray = jobs.items;
                 let jobResult = jobsArray[indexCounter].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
-                if (indexCounter < jobsArray.length - 1) {
+                if (indexCounter + 1 !== jobsArray.length) {
                     this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... ${detailsMessage}... ${moreMessage}`, repeatMoreMessage);
+                    indexCounter++;
                 } else {
                     this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... ${detailsMessage}... ${noMoreMessage}`, noMoreMessage);
                 }
@@ -82,8 +83,13 @@ var handlers = {
     },
 
     'JobDescriptionIntent': function() {
-        if (indexCounter < jobsArray.length -1) {
+        if (indexCounter + 1 !== jobsArray.length) {
+            // Rollback counter to ensure correct job is described
+            indexCounter--;
+            
             this.emit(':ask', `Here is a description of the job...${jobsArray[indexCounter].description.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')}... ${moreMessage}`, repeatMoreMessage)
+            
+            indexCounter++;
         } else {
             this.emit(':ask', `Here is a description of the job...${jobsArray[indexCounter].description.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')}... ${noMoreMessage}`, noMoreMessage)
         }
@@ -91,10 +97,14 @@ var handlers = {
     },
 
     'AMAZON.NextIntent': function() {
-        if (indexCounter < jobsArray.length - 1) {
-            indexCounter++
+        if (indexCounter + 1 !== jobsArray.length) {
             let currentJobTitle = jobsArray[indexCounter].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
             this.emit(':ask', `${currentJobTitle}...${detailsMessage}... ${moreMessage}`, repeatMoreMessage)
+            indexCounter++;
+        } else if (indexCounter + 1 === jobsArray.length) {
+            let currentJobTitle = jobsArray[indexCounter].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
+            this.emit(':ask', `${currentJobTitle}... ${detailsMessage}... ${noMoreMessage}`, noMoreMessage)
+            indexCounter++;
         } else {
             this.emit(':ask', noMoreMessage, noMoreMessage)
         }
