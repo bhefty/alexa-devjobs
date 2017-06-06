@@ -68,7 +68,7 @@ var handlers = {
             })
             .then((jobs) => {
                 jobsArray = jobs.items;
-                let jobResult = jobsArray[indexCounter].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
+                let jobResult = cleanText(jobsArray[indexCounter].title)
                 if (indexCounter + 1 !== jobsArray.length) {
                     this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... ${detailsMessage}... ${moreMessage}`, repeatMoreMessage);
                     indexCounter++;
@@ -87,24 +87,24 @@ var handlers = {
             // Rollback counter to ensure correct job is described
             indexCounter--;
             
-            this.emit(':ask', `Here is a description of the job...${jobsArray[indexCounter].description.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')}... ${moreMessage}`, repeatMoreMessage)
+            this.emit(':askWithCard', `Here is a description of the job...${cleanText(jobsArray[indexCounter].description)}... ${moreMessage}`, repeatMoreMessage, cleanText(jobsArray[indexCounter].title), jobsArray[indexCounter].description)
             
             indexCounter++;
         } else {
             // Rollback counter to ensure correct job is described
             indexCounter--;
-            this.emit(':ask', `Here is a description of the job...${jobsArray[indexCounter].description.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')}... ${noMoreMessage}`, noMoreMessage)
+            this.emit(':askWithCard', `Here is a description of the job...${cleanText(jobsArray[indexCounter].description)}... ${noMoreMessage}`, noMoreMessage, cleanText(jobsArray[indexCounter].title), jobsArray[indexCounter].description)
         }
         
     },
 
     'AMAZON.NextIntent': function() {
         if (indexCounter + 1 !== jobsArray.length) {
-            let currentJobTitle = jobsArray[indexCounter].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
+            let currentJobTitle = cleanText(jobsArray[indexCounter].title)
             this.emit(':ask', `${currentJobTitle}...${detailsMessage}... ${moreMessage}`, repeatMoreMessage)
             indexCounter++;
         } else if (indexCounter + 1 === jobsArray.length) {
-            let currentJobTitle = jobsArray[indexCounter].title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
+            let currentJobTitle = cleanText(jobsArray[indexCounter].title)
             this.emit(':ask', `${currentJobTitle}... ${detailsMessage}... ${noMoreMessage}`, noMoreMessage)
             indexCounter++;
         } else {
@@ -137,6 +137,8 @@ var handlers = {
 
 //    END of Intent Handlers {} ========================================================================================
 // 3. Helper Function  =================================================================================================
+const cleanText = (text) => text.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and');
+
 function parseJobType(jobType) {
     switch (jobType) {
         case 'programming': 
