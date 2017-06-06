@@ -1,10 +1,11 @@
 {
   "name": "alexa-devjobs",
   "version": "1.0.0",
-  "description": "Search StackOverflow jobs listings",
+  "description": "Search WeWorkRemotely jobs listings",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "package": "node-lambda package",
+    "deploy": "node-lambda deploy"
   },
   "repository": {
     "type": "git",
