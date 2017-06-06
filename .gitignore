@@ -1,6 +1,12 @@
 # dependencies
 node_modules
 
+# node-lambda
+.env
+deploy.env
+event.json
+.lambda
+
 # zip files
 *.zip
 
