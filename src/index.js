@@ -17,16 +17,16 @@ const noMoreMessage = `That was all the jobs I found at this time. You can say '
 
 let sampleArray = [
     {
-        title: "First job title First job title First job title First job title First job title First job title First job title ",
+        title: "First job",
         description: "First job description."
     },
     {
-        title: "Second job title Second job title Second job title Second job title Second job title Second job title Second job title ",
+        title: "Second job",
         description: "Second job description."
     },
     {
-        title: "THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title ",
-        description: "third job description."
+        title: "Third job",
+        description: "Third job description."
     }
 ]
 
@@ -66,9 +66,16 @@ var handlers = {
             .then((res) => {
                 return res.json()
             })
+            .then((uncleanJobs) => {
+                let cleanJobsPromises = uncleanJobs.items.map(cleanText)
+                return Promise.all(cleanJobsPromises)
+            })
             .then((jobs) => {
-                jobsArray = jobs.items;
-                let jobResult = cleanText(jobsArray[indexCounter].title)
+                jobsArray = jobs;
+
+                // jobsArray = sampleArray
+                let jobResult = jobsArray[indexCounter].title
+                console.log('jobResult', jobResult)
                 if (indexCounter + 1 !== jobsArray.length) {
                     this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... ${detailsMessage}... ${moreMessage}`, repeatMoreMessage);
                     indexCounter++;
@@ -87,24 +94,24 @@ var handlers = {
             // Rollback counter to ensure correct job is described
             indexCounter--;
             
-            this.emit(':askWithCard', `Here is a description of the job...${cleanText(jobsArray[indexCounter].description)}... ${moreMessage}`, repeatMoreMessage, cleanText(jobsArray[indexCounter].title), jobsArray[indexCounter].description)
+            this.emit(':askWithCard', `Here is a description of the job...${jobsArray[indexCounter].description}... ${moreMessage}`, repeatMoreMessage, jobsArray[indexCounter].title, jobsArray[indexCounter].description)
             
             indexCounter++;
         } else {
             // Rollback counter to ensure correct job is described
             indexCounter--;
-            this.emit(':askWithCard', `Here is a description of the job...${cleanText(jobsArray[indexCounter].description)}... ${noMoreMessage}`, noMoreMessage, cleanText(jobsArray[indexCounter].title), jobsArray[indexCounter].description)
+            this.emit(':askWithCard', `Here is a description of the job...${jobsArray[indexCounter].description}... ${noMoreMessage}`, noMoreMessage, jobsArray[indexCounter].title, jobsArray[indexCounter].description)
         }
         
     },
 
     'AMAZON.NextIntent': function() {
         if (indexCounter + 1 !== jobsArray.length) {
-            let currentJobTitle = cleanText(jobsArray[indexCounter].title)
+            let currentJobTitle = jobsArray[indexCounter].title
             this.emit(':ask', `${currentJobTitle}...${detailsMessage}... ${moreMessage}`, repeatMoreMessage)
             indexCounter++;
         } else if (indexCounter + 1 === jobsArray.length) {
-            let currentJobTitle = cleanText(jobsArray[indexCounter].title)
+            let currentJobTitle = jobsArray[indexCounter].title
             this.emit(':ask', `${currentJobTitle}... ${detailsMessage}... ${noMoreMessage}`, noMoreMessage)
             indexCounter++;
         } else {
@@ -137,7 +144,16 @@ var handlers = {
 
 //    END of Intent Handlers {} ========================================================================================
 // 3. Helper Function  =================================================================================================
-const cleanText = (text) => text.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and');
+const cleanText = (job) => {
+    console.log('in clean text', job)
+    return new Promise(resolve => {
+        let cleaned = {
+            title: job.title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and'),
+            description: job.description.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
+        }
+        resolve(cleaned)
+    })
+}
 
 function parseJobType(jobType) {
     switch (jobType) {
