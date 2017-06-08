@@ -6,9 +6,12 @@ const fetch = require('isomorphic-fetch');
 // Text strings =====================================================================================================
 
 const welcomeMessage = `Let's search for some remote jobs! What kind of job would you like to search for?`;
-const repeatWelcomeMessage = `Let me know what kind of job to search for. You can say something like 'programming', 'design', 'business' or something else.`;
+const repeatWelcomeMessage = `Let me know what kind of job to search for. You can say something like 'programming', 'design', or 'business'.`;
 const goodbyeMessage = `Be sure to check back later for new job offerings.`;
-const detailsMessage = `If you want more details, say 'details' or 'description'.`;
+const jobMessage = `To learn more about this job, say 'details'. To continue, say 'continue' or 'next'.`;
+const cardMessage = `Okay, please open your Alexa App to view the details.`;
+const detailsMessage = `Would you like me to read the details or send it to your Alexa app?`;
+const repeatDetailsMessage = `Say 'tell me' to hear the job description read to you, or say 'show me' to send it to the Alexa app.`;
 const helpMessage = `You can ask to search for a job type, continue to the next job, get details, start over to search for a new job, or stop to end.`;
 const moreMessage = `There are more jobs, say 'continue' to hear more, or 'stop' to end.`;
 const repeatMoreMessage = `Say 'continue' to hear more jobs, or 'stop' to end.`;
@@ -17,16 +20,16 @@ const noMoreMessage = `That was all the jobs I found at this time. You can say '
 
 let sampleArray = [
     {
-        title: "First job title First job title First job title First job title First job title First job title First job title ",
+        title: "First job",
         description: "First job description."
     },
     {
-        title: "Second job title Second job title Second job title Second job title Second job title Second job title Second job title ",
+        title: "Second job",
         description: "Second job description."
     },
     {
-        title: "THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title THIRD job title ",
-        description: "third job description."
+        title: "Third job",
+        description: "Third job description."
     }
 ]
 
@@ -51,30 +54,38 @@ exports.handler = function(event, context, callback) {
 
 var handlers = {
     'LaunchRequest': function () {
-        indexCounter = 0
+        indexCounter = 0;
+        jobsArray = [];
         this.emit(':ask', welcomeMessage, repeatWelcomeMessage);
     },
 
     'RemoteJobIntent': function () {
         indexCounter = 0
         // delegate to Alexa to collect the required slot values
-        var filledSlots = delegateSlotCollection.call(this);
+        // var filledSlots = delegateSlotCollection.call(this);
 
         var jobType = this.event.request.intent.slots.jobType.value;
+        console.log('jobType said was:', jobType)
+        console.log('intent', JSON.stringify(this.event.request.intent.slots.jobType))
         let jobCategory = parseJobType(jobType);
         fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fweworkremotely.com%2Fcategories%2F${jobCategory}%2Fjobs.rss`)
             .then((res) => {
                 return res.json()
             })
+            .then((uncleanJobs) => {
+                let cleanJobsPromises = uncleanJobs.items.map(cleanText)
+                return Promise.all(cleanJobsPromises)
+            })
             .then((jobs) => {
-                jobsArray = jobs.items;
-                let jobResult = cleanText(jobsArray[indexCounter].title)
+                jobsArray = jobs;
+
+                // jobsArray = sampleArray
+                let jobResult = jobsArray[indexCounter].title
+                console.log('jobResult', jobResult)
                 if (indexCounter + 1 !== jobsArray.length) {
-                    this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... ${detailsMessage}... ${moreMessage}`, repeatMoreMessage);
                     indexCounter++;
-                } else {
-                    this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... ${detailsMessage}... ${noMoreMessage}`, noMoreMessage);
-                }
+                } 
+                this.emit(':ask', `The latest remote job for ${jobType} is: ${jobResult}... ${jobMessage}`, jobMessage);
         })
             .catch((err) => {
                 console.log(err);
@@ -83,29 +94,48 @@ var handlers = {
     },
 
     'JobDescriptionIntent': function() {
-        if (indexCounter !== jobsArray.length) {
+        this.emit(':ask', detailsMessage, repeatDetailsMessage);
+    },
+
+    'SendToCardIntent': function() {
+         if (indexCounter !== jobsArray.length) {
             // Rollback counter to ensure correct job is described
             indexCounter--;
             
-            this.emit(':askWithCard', `Here is a description of the job...${cleanText(jobsArray[indexCounter].description)}... ${moreMessage}`, repeatMoreMessage, cleanText(jobsArray[indexCounter].title), jobsArray[indexCounter].description)
+            this.emit(':askWithCard', `${cardMessage}... ${moreMessage}`, repeatMoreMessage, jobsArray[indexCounter].title, jobsArray[indexCounter].description);
             
             indexCounter++;
         } else {
             // Rollback counter to ensure correct job is described
             indexCounter--;
-            this.emit(':askWithCard', `Here is a description of the job...${cleanText(jobsArray[indexCounter].description)}... ${noMoreMessage}`, noMoreMessage, cleanText(jobsArray[indexCounter].title), jobsArray[indexCounter].description)
+            this.emit(':askWithCard', `${cardMessage}... ${noMoreMessage}`, noMoreMessage, jobsArray[indexCounter].title, jobsArray[indexCounter].description);
+        }
+    },
+
+    'SpeakDescriptionIntent': function() {
+        if (indexCounter !== jobsArray.length) {
+            // Rollback counter to ensure correct job is described
+            indexCounter--;
+            
+            this.emit(':ask', `Here is a description of the job...${jobsArray[indexCounter].description}... ${moreMessage}`, repeatMoreMessage);
+            
+            indexCounter++;
+        } else {
+            // Rollback counter to ensure correct job is described
+            indexCounter--;
+            this.emit(':ask', `Here is a description of the job...${jobsArray[indexCounter].description}... ${noMoreMessage}`, noMoreMessage);
         }
         
     },
 
     'AMAZON.NextIntent': function() {
         if (indexCounter + 1 !== jobsArray.length) {
-            let currentJobTitle = cleanText(jobsArray[indexCounter].title)
-            this.emit(':ask', `${currentJobTitle}...${detailsMessage}... ${moreMessage}`, repeatMoreMessage)
+            let currentJobTitle = jobsArray[indexCounter].title
+            this.emit(':ask', `${currentJobTitle}... ${jobMessage}`, jobMessage);
             indexCounter++;
         } else if (indexCounter + 1 === jobsArray.length) {
-            let currentJobTitle = cleanText(jobsArray[indexCounter].title)
-            this.emit(':ask', `${currentJobTitle}... ${detailsMessage}... ${noMoreMessage}`, noMoreMessage)
+            let currentJobTitle = jobsArray[indexCounter].title
+            this.emit(':ask', `${currentJobTitle}... ${jobMessage}`, jobMessage);
             indexCounter++;
         } else {
             this.emit(':ask', noMoreMessage, noMoreMessage)
@@ -114,6 +144,7 @@ var handlers = {
 
     'AMAZON.StartOverIntent': function() {
         indexCounter = 0;
+        jobsArray = [];
         this.emit(':ask', welcomeMessage, repeatWelcomeMessage);
     },
 
@@ -137,7 +168,16 @@ var handlers = {
 
 //    END of Intent Handlers {} ========================================================================================
 // 3. Helper Function  =================================================================================================
-const cleanText = (text) => text.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and');
+const cleanText = (job) => {
+    console.log('in clean text', job)
+    return new Promise(resolve => {
+        let cleaned = {
+            title: job.title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and'),
+            description: job.description.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and')
+        }
+        resolve(cleaned)
+    })
+}
 
 function parseJobType(jobType) {
     switch (jobType) {
@@ -174,7 +214,7 @@ function parseJobType(jobType) {
         case 'all others':
         case 'miscellaneous':
         default:
-            return `https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fweworkremotely.com%2Fcategories%2F4-remote%2Fjobs.rss`;
+            return '4-remote';
     };
 }
 
