@@ -1,7 +1,7 @@
 const Alexa = require('alexa-sdk');
 const Promise = require('promise');
 const fetch = require('isomorphic-fetch');
-
+const API_KEY = process.env.API_KEY;
 
 // Text strings =====================================================================================================
 
@@ -65,10 +65,9 @@ var handlers = {
         // var filledSlots = delegateSlotCollection.call(this);
 
         var jobType = this.event.request.intent.slots.jobType.value;
-        console.log('jobType said was:', jobType)
-        console.log('intent', JSON.stringify(this.event.request.intent.slots.jobType))
+        
         let jobCategory = parseJobType(jobType);
-        fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fweworkremotely.com%2Fcategories%2F${jobCategory}%2Fjobs.rss`)
+        fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fweworkremotely.com%2Fcategories%2F${jobCategory}%2Fjobs.rss&api_key=${API_KEY}`)
             .then((res) => {
                 return res.json()
             })
@@ -81,7 +80,6 @@ var handlers = {
 
                 // jobsArray = sampleArray
                 let jobResult = jobsArray[indexCounter].title
-                console.log('jobResult', jobResult)
                 if (indexCounter + 1 !== jobsArray.length) {
                     indexCounter++;
                 } 
@@ -169,7 +167,6 @@ var handlers = {
 //    END of Intent Handlers {} ========================================================================================
 // 3. Helper Function  =================================================================================================
 const cleanText = (job) => {
-    console.log('in clean text', job)
     return new Promise(resolve => {
         let cleaned = {
             title: job.title.replace(/(&nbsp;|<([^>]+)>)/ig, '').replace(/&rsquo;/ig, `'`).replace(/&amp;/ig, 'and'),
