@@ -17,22 +17,6 @@ const moreMessage = `There are more jobs, say 'continue' to hear more, or 'stop'
 const repeatMoreMessage = `Say 'continue' to hear more jobs, or 'stop' to end.`;
 const noMoreMessage = `That was all the jobs I found at this time. You can say 'start over' to search for a new job, or 'stop' to end.`;
 
-
-let sampleArray = [
-    {
-        title: "First job",
-        description: "First job description."
-    },
-    {
-        title: "Second job",
-        description: "Second job description."
-    },
-    {
-        title: "Third job",
-        description: "Third job description."
-    }
-]
-
 let jobsArray =[]
 
 
@@ -61,8 +45,6 @@ var handlers = {
 
     'RemoteJobIntent': function () {
         indexCounter = 0
-        // delegate to Alexa to collect the required slot values
-        // var filledSlots = delegateSlotCollection.call(this);
 
         var jobType = this.event.request.intent.slots.jobType.value;
         
@@ -77,8 +59,7 @@ var handlers = {
             })
             .then((jobs) => {
                 jobsArray = jobs;
-
-                // jobsArray = sampleArray
+                
                 let jobResult = jobsArray[indexCounter].title
                 if (indexCounter + 1 !== jobsArray.length) {
                     indexCounter++;
@@ -213,27 +194,4 @@ function parseJobType(jobType) {
         default:
             return '4-remote';
     };
-}
-
-function delegateSlotCollection(){
-  console.log("in delegateSlotCollection");
-  console.log("current dialogState: "+this.event.request.dialogState);
-    if (this.event.request.dialogState === "STARTED") {
-      console.log("in Beginning");
-      var updatedIntent=this.event.request.intent;
-      //optionally pre-fill slots: update the intent object with slot values for which
-      //you have defaults, then return Dialog.Delegate with this updated intent
-      // in the updatedIntent property
-      this.emit(":delegate", updatedIntent);
-    } else if (this.event.request.dialogState !== "COMPLETED") {
-      console.log("in not completed");
-      // return a Dialog.Delegate directive with no updatedIntent property.
-      this.emit(":delegate");
-    } else {
-      console.log("in completed");
-      console.log("returning: "+ JSON.stringify(this.event.request.intent));
-      // Dialog is now complete and all required slots should be filled,
-      // so call your normal intent handler.
-      return this.event.request.intent;
-    }
 }
