@@ -214,7 +214,7 @@ function parseJobType(jobType) {
         case 'all others':
         case 'miscellaneous':
         default:
-            return `https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fweworkremotely.com%2Fcategories%2F4-remote%2Fjobs.rss`;
+            return '4-remote';
     };
 }
 
