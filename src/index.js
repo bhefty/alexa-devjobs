@@ -2,6 +2,7 @@ const Alexa = require('alexa-sdk');
 const Promise = require('promise');
 const fetch = require('isomorphic-fetch');
 const API_KEY = process.env.API_KEY;
+const APP_ID = process.env.APP_ID;
 
 // Text strings =====================================================================================================
 
@@ -29,8 +30,7 @@ exports.handler = function(event, context, callback) {
 
     var alexa = Alexa.handler(event, context);
 
-    // alexa.appId = 'amzn1.echo-sdk-ams.app.1234';
-    // alexa.dynamoDBTableName = 'YourTableName'; // creates new table for session.attributes
+    alexa.appId = APP_ID;
 
     alexa.registerHandlers(handlers);
     alexa.execute();
@@ -59,7 +59,7 @@ var handlers = {
             })
             .then((jobs) => {
                 jobsArray = jobs;
-                
+
                 let jobResult = jobsArray[indexCounter].title
                 if (indexCounter + 1 !== jobsArray.length) {
                     indexCounter++;
