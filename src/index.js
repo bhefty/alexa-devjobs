@@ -9,6 +9,7 @@ const APP_ID = process.env.APP_ID;
 const goodbyeMessage = `Be sure to check back later for updated results.`;
 const helpMessage = `You can ask to for the top search terms.`;
 
+let searchTermsArray = []
 // 2. Skill Code =======================================================================================================
 
 exports.handler = function(event, context, callback) {
@@ -24,9 +25,11 @@ exports.handler = function(event, context, callback) {
 };
 
 var handlers = {
-    'LaunchRequest': function () {
-        let searchTermsArray = []
-        
+    'LaunchRequest': function () {        
+        this.emit('TopSearchIntent')
+    },
+
+    'TopSearchIntent': function () {
         fetch(`https://api.rss2json.com/v1/api.json?rss_url=https://trends.google.com/trends/hottrends/atom/feed?pn=p1&api_key=${API_KEY}`)
             .then(res => res.json())
             .then(terms => {
