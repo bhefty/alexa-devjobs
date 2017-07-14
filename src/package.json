@@ -1,7 +1,7 @@
 {
-  "name": "alexa-devjobs",
+  "name": "alexa-topsearch",
   "version": "1.0.0",
-  "description": "Search WeWorkRemotely jobs listings",
+  "description": "Fetch current trending search term",
   "main": "index.js",
   "scripts": {
     "package": "node-lambda package",
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bhefty/alexa-devjobs.git"
+    "url": "git+https://github.com/bhefty/alexa-topsearch.git"
   },
   "author": "Bill Hefty",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/bhefty/alexa-devjobs/issues"
+    "url": "https://github.com/bhefty/alexa-topsearch/issues"
   },
-  "homepage": "https://github.com/bhefty/alexa-devjobs#readme",
+  "homepage": "https://github.com/bhefty/alexa-topsearch#readme",
   "dependencies": {
     "alexa-sdk": "^1.0.9",
     "isomorphic-fetch": "^2.2.1",
